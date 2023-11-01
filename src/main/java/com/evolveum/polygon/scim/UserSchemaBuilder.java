@@ -165,7 +165,8 @@ public class UserSchemaBuilder {
 		builder.addAttributeInfo(AttributeInfoBuilder.define("groups.default.value").build());
 		builder.addAttributeInfo(AttributeInfoBuilder.define("groups.default.display").build());
 
-		builder.addAttributeInfo(AttributeInfoBuilder.define("entitlements.default.display").build());
+		builder.addAttributeInfo(AttributeInfoBuilder.define("members.default.value").build());
+		builder.addAttributeInfo(AttributeInfoBuilder.define("members.default.display").build());
 
 		builder.addAttributeInfo(AttributeInfoBuilder.define("roles.default.value").build());
 		builder.addAttributeInfo(AttributeInfoBuilder.define("roles.default.display").build());
