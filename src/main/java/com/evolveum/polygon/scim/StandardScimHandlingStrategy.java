@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.evolveum.polygon.scim.common.ConnectorObjectBuilderWrapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -1145,24 +1146,22 @@ public class StandardScimHandlingStrategy implements HandlingStrategy {
 					"Empty json object was passed from data provider. Error ocourance while building connector object");
 		}
 
-		ConnectorObjectBuilder cob = new ConnectorObjectBuilder();
-		cob.setUid(resourceJsonObject.getString(ID));
-		excludedAttributes.add(ID);
+		ConnectorObjectBuilderWrapper cob;
 		if (USERS.equals(resourceEndPoint)) {
+			cob = new ConnectorObjectBuilderWrapper(ObjectClass.ACCOUNT);
 			cob.setName(resourceJsonObject.getString(USERNAME));
 			excludedAttributes.add(USERNAME);
 		} else if (GROUPS.equals(resourceEndPoint)) {
-
+			cob = new ConnectorObjectBuilderWrapper(ObjectClass.GROUP);
 			cob.setName(resourceJsonObject.getString(DISPLAYNAME));
 			excludedAttributes.add(DISPLAYNAME);
-			cob.setObjectClass(ObjectClass.GROUP);
 		} else {
-			cob.setName(resourceJsonObject.getString(DISPLAYNAME));
-			excludedAttributes.add(DISPLAYNAME);
-			ObjectClass objectClass = new ObjectClass(resourceEndPoint);
-			cob.setObjectClass(objectClass);
-
+			ObjectClass objClass = new ObjectClass(resourceEndPoint);
+			LOGGER.error("Unsupported class: {0}, oclass.getDisplayNameKey()", objClass.getDisplayNameKey());
+			throw new ConnectorException("Unsupported class to build connector object");
 		}
+		cob.setUid(resourceJsonObject.getString(ID));
+		excludedAttributes.add(ID);
 		for (String key : resourceJsonObject.keySet()) {
 			Object attribute = resourceJsonObject.get(key);
 
