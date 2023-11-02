@@ -391,7 +391,100 @@ public class StandardScimHandlingStrategy implements HandlingStrategy {
 										handleCAVGroupQuery(jsonObject, GROUPS, resultHandler, scimBaseUri, authHeader,
 												conf);
 
-									} else {
+									} else if (jsonObject.has(RESOURCES)) {
+										int amountOfResources = jsonObject.getJSONArray(RESOURCES).length();
+										int totalResults = 0;
+										int startIndex = 0;
+										int itemsPerPage = 0;
+
+										if (jsonObject.has(STARTINDEX) && jsonObject.has(TOTALRESULTS)
+												&& jsonObject.has(ITEMSPERPAGE)) {
+											totalResults = (int) jsonObject.get(TOTALRESULTS);
+											startIndex = (int) jsonObject.get(STARTINDEX);
+											itemsPerPage = (int) jsonObject.get(ITEMSPERPAGE);
+										}
+
+										for (int i = 0; i < amountOfResources; i++) {
+											JSONObject minResourceJson = new JSONObject();
+											minResourceJson = jsonObject.getJSONArray(RESOURCES).getJSONObject(i);
+											if (minResourceJson.has(ID) && minResourceJson.getString(ID) != null) {
+
+												if (minResourceJson.has(USERNAME)) {
+
+													ConnectorObject connectorObject = buildConnectorObject(minResourceJson,
+															resourceEndPoint);
+
+													resultHandler.handle(connectorObject);
+												} else if (!USERS.equals(resourceEndPoint)) {
+
+													if (minResourceJson.has(DISPLAYNAME)) {
+														ConnectorObject connectorObject = buildConnectorObject(
+																minResourceJson, resourceEndPoint);
+														resultHandler.handle(connectorObject);
+													}
+												} else if (minResourceJson.has(META)) {
+
+													String resourceUri = minResourceJson.getJSONObject(META)
+															.getString("location").toString();
+
+													HttpGet httpGetR = buildHttpGet(resourceUri, authHeader);
+													try (CloseableHttpResponse resourceResponse = (CloseableHttpResponse) httpClient
+															.execute(httpGetR)) {
+
+														statusCode = resourceResponse.getStatusLine().getStatusCode();
+														responseString = EntityUtils.toString(resourceResponse.getEntity());
+														if (statusCode == 200) {
+
+															JSONObject fullResourcejson = new JSONObject(responseString);
+
+															// LOGGER.info(
+															// "The {0}. resource
+															// jsonobject which was
+															// returned by the
+															// service
+															// provider: {1}",
+															// i + 1,
+															// fullResourcejson);
+
+															ConnectorObject connectorObject = buildConnectorObject(
+																	fullResourcejson, resourceEndPoint);
+
+															resultHandler.handle(connectorObject);
+
+														} else {
+
+															ErrorHandler.onNoSuccess(responseString, statusCode,
+																	resourceUri);
+
+														}
+													}
+												}
+											} else {
+												LOGGER.error("No uid present in fetched object: {0}", minResourceJson);
+
+												throw new ConnectorException(
+														"No uid present in fetchet object while processing queuery result11");
+
+											}
+										}
+										if (resultHandler instanceof SearchResultsHandler) {
+											Boolean allResultsReturned = false;
+											int remainingResult = totalResults - (startIndex - 1) - itemsPerPage;
+
+											if (remainingResult <= 0) {
+												remainingResult = 0;
+												allResultsReturned = true;
+
+											}
+
+											// LOGGER.info("The number of remaining
+											// results: {0}", remainingResult);
+											SearchResult searchResult = new SearchResult(DEFAULT, remainingResult,
+													allResultsReturned);
+											((SearchResultsHandler) resultHandler).handleResult(searchResult);
+										}
+									}
+									else {
 
 										LOGGER.error("Resource object not present in provider response to the query");
 
@@ -1367,11 +1460,9 @@ public class StandardScimHandlingStrategy implements HandlingStrategy {
 		if (USERS.equals(resourceEndPoint)) {
 			cob = new ConnectorObjectBuilderWrapper(ObjectClass.ACCOUNT);
 			cob.setName(resourceJsonObject.getString(USERNAME));
-			excludedAttributes.add(USERNAME);
 		} else if (GROUPS.equals(resourceEndPoint)) {
 			cob = new ConnectorObjectBuilderWrapper(ObjectClass.GROUP);
 			cob.setName(resourceJsonObject.getString(DISPLAYNAME));
-			excludedAttributes.add(DISPLAYNAME);
 		} else {
 			ObjectClass objClass = new ObjectClass(resourceEndPoint);
 			LOGGER.error("Unsupported class: {0}, oclass.getDisplayNameKey()", objClass.getDisplayNameKey());
