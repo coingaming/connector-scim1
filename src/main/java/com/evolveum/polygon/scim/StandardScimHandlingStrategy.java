@@ -1371,7 +1371,6 @@ public class StandardScimHandlingStrategy implements HandlingStrategy {
 		} else if (GROUPS.equals(resourceEndPoint)) {
 			cob = new ConnectorObjectBuilderWrapper(ObjectClass.GROUP);
 			cob.setName(resourceJsonObject.getString(DISPLAYNAME));
-			excludedAttributes.add(DISPLAYNAME);
 		} else {
 			ObjectClass objClass = new ObjectClass(resourceEndPoint);
 			LOGGER.error("Unsupported class: {0}, oclass.getDisplayNameKey()", objClass.getDisplayNameKey());
@@ -1385,9 +1384,7 @@ public class StandardScimHandlingStrategy implements HandlingStrategy {
 			excludedAttributes = excludeFromAssembly(excludedAttributes);
 
 			if (excludedAttributes.contains(key)) {
-
-				//LOGGER.warn("The attribute \"{0}\" was omitted from the connId object build.", key);
-
+				LOGGER.warn("The attribute \"{0}\" was omitted from the connId object build.", key);
 			} else
 
 			if (attribute instanceof JSONArray) {
