@@ -212,9 +212,7 @@ public class GenericDataBuilder implements ObjectTranslator {
                     || "urn-scim-schemas-extension-enterprise-1.0.department".equals(attributeName)
                     || "urn-scim-schemas-extension-enterprise-1.0.employeeNumber".equals(attributeName)) {
 
-                if (i.getValue() != null && i.getValue().size() > 0) {
                     putEnterpriseAttr(json, attributeName, i.getValue().get(0)); // always single value
-                }
                 continue;
             }
 
